@@ -1,0 +1,66 @@
+---
+title: "Conversation History"
+description: "A full session transcript with Hanzi, Pinyin, and English for every AI turn"
+---
+
+The Conversation History panel records every exchange in your session. It auto-scrolls to the latest message and gives you a permanent record to study after the conversation ends.
+
+## What's recorded
+
+Each entry in the history is a `ConversationTurn`:
+
+```typescript types.ts
+export interface ConversationTurn {
+  id: string;             // Unique ID for the turn
+  role: 'user' | 'ai';   // Who spoke
+  text: string;           // Hanzi for AI, recognized speech for User
+  pinyin?: string;        // Pinyin (AI turns only)
+  translation?: string;   // English translation (AI turns only)
+  timestamp: number;      // Unix timestamp (ms)
+}
+```
+
+### AI turns
+
+AI messages display three lines:
+- **Hanzi** — the Chinese characters in bold
+- **Pinyin** — romanized pronunciation in monospace
+- **Translation** — English translation in italics
+
+This mirrors the triple-layered subtitle format so you can cross-reference what was said.
+
+### User turns
+
+User messages display the recognized Mandarin text that the AI transcribed from your speech. This is useful for checking whether the AI heard you correctly.
+
+## Using the history for study
+
+<Steps>
+  <Step title="Review vocabulary after the session">
+    Scroll through the AI turns to collect new words. The Pinyin column makes it easy to check pronunciation without a separate dictionary.
+  </Step>
+  <Step title="Check your own accuracy">
+    Look at your turns to see what the AI transcribed. If it misheard you, that's a signal to work on that particular sound or tone.
+  </Step>
+  <Step title="Repeat with a lesson">
+    Run the same lesson again with the history visible. Compare what you said this time versus last time to track progress.
+  </Step>
+</Steps>
+
+## Layout and visibility
+
+The History panel occupies the left column of the desktop layout (`lg:col-span-1`). It is hidden on mobile and tablet screens to conserve space for the avatar and subtitle display.
+
+<Note>
+  The history panel is only visible on large screens (1024px and above). On mobile, review your conversation by scrolling back through the subtitle area or noting the pronunciation feedback cards.
+</Note>
+
+## History lifecycle
+
+- History is **cleared** when you start a new conversation (press **Start Conversation**)
+- History is **not persisted** between browser sessions — refreshing the page wipes it
+- There is no export function — copy text manually if you want to save a session
+
+<Tip>
+  Keep a vocabulary notebook open beside the app. After each session, copy any new words from the history into your notes along with their Pinyin and translation.
+</Tip>

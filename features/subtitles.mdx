@@ -1,0 +1,71 @@
+---
+title: "Triple-Layered Subtitles"
+description: "Every AI sentence displayed simultaneously in Hanzi, Pinyin, and English"
+---
+
+Every time the AI speaks, three lines of text appear in the center panel of the screen:
+
+| Layer | Script | Purpose |
+|---|---|---|
+| **Hanzi** | 你好，很高兴认识你！ | The authentic Chinese characters — what you're working toward reading |
+| **Pinyin** | nǐ hǎo, hěn gāoxìng rènshi nǐ! | Romanized pronunciation with tone marks — your pronunciation guide |
+| **English** | Hello, nice to meet you! | Immediate translation — no dictionary lookups needed |
+
+All three layers update simultaneously as the AI speaks, so you can follow along without breaking the conversational flow.
+
+## The SubtitleData interface
+
+```typescript types.ts
+export interface SubtitleData {
+  hanzi: string;    // Chinese characters
+  pinyin: string;   // Pinyin romanization with tone marks
+  english: string;  // English translation
+}
+```
+
+## How subtitles are generated
+
+Subtitles are not produced by post-processing the audio. Instead, the AI calls the `update_subtitles` Gemini function tool *while it speaks*, providing all three layers at once:
+
+```typescript liveApiService.ts
+const updateSubtitlesTool: FunctionDeclaration = {
+  name: 'update_subtitles',
+  description: 'Updates the subtitles with the text, pinyin, and english translation of what is being spoken by the AI.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      hanzi:   { type: Type.STRING, description: 'The Chinese characters (Hanzi) of the sentence.' },
+      pinyin:  { type: Type.STRING, description: 'The Pinyin romanization with tones.' },
+      english: { type: Type.STRING, description: 'The English translation.' },
+    },
+    required: ['hanzi', 'pinyin', 'english'],
+  },
+};
+```
+
+The system prompt instructs the AI to call `update_subtitles` **simultaneously** while speaking, so subtitles and audio stay in sync.
+
+## Display behavior
+
+- Subtitles appear with a fade-in and slide-up animation
+- Each new AI turn replaces the previous subtitle
+- When no subtitle is active, the panel shows "Waiting for conversation..."
+- If a lesson is selected but the session hasn't started, the lesson name is shown instead
+
+## Why three layers?
+
+<CardGroup cols={3}>
+  <Card title="Hanzi" icon="language">
+    Reading characters reinforces visual recognition — essential for real-world literacy in China.
+  </Card>
+  <Card title="Pinyin" icon="microphone">
+    Tone marks let you verify your own pronunciation and study the syllable structure of each word.
+  </Card>
+  <Card title="English" icon="book">
+    Instant translation keeps the conversation moving without breaking immersion to look words up.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Try to read the Hanzi first, predict the meaning, then check the English. This active recall strategy accelerates vocabulary retention.
+</Tip>

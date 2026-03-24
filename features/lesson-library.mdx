@@ -1,0 +1,115 @@
+---
+title: "Lesson Library"
+description: "Structured roleplay scenarios from Beginner to Advanced for focused practice"
+---
+
+The Lesson Library provides five curated conversation modules that give the AI a specific role and goal. Each lesson targets real-world vocabulary and cultural context, from ordering coffee to conducting a business meeting.
+
+Open the library by clicking **Library** in the top-right header.
+
+## Free Talk Mode
+
+The default mode. No structured scenario is applied — the AI acts as a general Mandarin conversation partner and adjusts to any topic you raise. Best for exploring vocabulary and building fluency without constraints.
+
+## Lessons
+
+<AccordionGroup>
+  <Accordion title="Self Introduction — Beginner · Social">
+    **Goal:** Practice introducing yourself — name, nationality, and profession.
+
+    The AI plays a new acquaintance at a social gathering. It will:
+    1. Ask your name (你叫什么名字？)
+    2. Ask where you're from (你是哪国人？)
+    3. Ask what you do for work (你做什么工作？)
+
+    Gentle grammar corrections are provided throughout. Sentences are kept short and simple.
+  </Accordion>
+  <Accordion title="Ordering Coffee — Beginner · Daily Life">
+    **Goal:** Practice ordering drinks, specifying size, sugar and ice levels, and paying.
+
+    The AI plays a barista. It will:
+    1. Welcome you and ask what you'd like (你好，要喝点什么？)
+    2. Ask about temperature (hot/iced) and size
+    3. Ask about sugar preference
+    4. State the price and request payment (WeChat Pay or Alipay)
+
+    Key vocabulary: 咖啡 (coffee), 冰 (ice), 热 (hot), 杯 (cup), 扫码 (scan code).
+  </Accordion>
+  <Accordion title="Taking a Taxi — Intermediate · Travel">
+    **Goal:** Give directions to a driver, discuss routes, and handle payment.
+
+    The AI plays a Beijing taxi driver. It will:
+    1. Ask where you're going (师傅，去哪儿？)
+    2. Ask for a nearby landmark if it doesn't know the exact street
+    3. Chat about traffic (堵车) or weather during the ride
+    4. Ask for the fare on arrival
+
+    Encourages use of direction words: 左转 (turn left), 右转 (turn right), 直走 (go straight).
+  </Accordion>
+  <Accordion title="Bargaining at the Market — Intermediate · Shopping">
+    **Goal:** Buy fruit or souvenirs and negotiate a lower price.
+
+    The AI plays an enthusiastic street vendor. It will:
+    1. Offer goods enthusiastically (来看一看，很便宜！)
+    2. Quote a slightly high price
+    3. React with mock shock to your counter-offer
+    4. Eventually agree to a middle price
+
+    Tone is fun and lively.
+  </Accordion>
+  <Accordion title="Business Meeting — Advanced · Professional">
+    **Goal:** Practice formal greetings, business card exchange, and schedule discussion.
+
+    The AI plays a manager at a Chinese tech company. It will:
+    1. Use formal language (您, 幸会)
+    2. Simulate exchanging business cards
+    3. Discuss the agenda for the afternoon meeting
+    4. Ask about accommodation arrangements
+
+    Focus on formal business etiquette and vocabulary.
+  </Accordion>
+</AccordionGroup>
+
+## Difficulty levels
+
+| Level | Color | Description |
+|---|---|---|
+| Beginner | Green | Simple vocabulary, short sentences, frequent corrections |
+| Intermediate | Yellow | Real-world scenarios, directional and transactional language |
+| Advanced | Red | Formal register, professional vocabulary, cultural nuance |
+
+## Selecting a lesson
+
+<Steps>
+  <Step title="Open the Library">
+    Click the **Library** button in the top-right header.
+  </Step>
+  <Step title="Browse lessons">
+    Review the lesson cards. Each shows the title, level badge, topic, and a short description.
+  </Step>
+  <Step title="Select a lesson">
+    Click any lesson card to activate it. The active lesson is highlighted and its name appears in the header as a pill badge.
+  </Step>
+  <Step title="Start the session">
+    Press **Start Conversation**. The AI will receive the lesson scenario as its system context and begin the roleplay immediately.
+  </Step>
+</Steps>
+
+<Warning>
+  Switching lessons while a session is active will disconnect you first. Make sure you're done with your current conversation before switching scenarios.
+</Warning>
+
+## The Lesson interface
+
+```typescript types.ts
+export interface Lesson {
+  id: string;          // Unique identifier (e.g. 'coffee', 'taxi')
+  title: string;       // Display name
+  description: string; // Short summary shown in the lesson card
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  topic: string;       // Category (e.g. 'Travel', 'Shopping')
+  scenario: string;    // The full roleplay instruction sent to the AI
+}
+```
+
+The `scenario` field is passed as part of the system instruction when `LiveApiService.connect(scenarioInstruction)` is called.

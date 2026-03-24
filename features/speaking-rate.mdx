@@ -1,0 +1,74 @@
+---
+title: "Speaking Rate Control"
+description: "Adjust how fast the AI speaks to match your current listening level"
+---
+
+The speaking rate control lets you slow down or speed up the AI's speech. This is especially useful when you're struggling to catch tones at full speed, or when you want to challenge yourself with native-pace conversation.
+
+## Rate options
+
+| Label | Rate value | AI behavior |
+|---|---|---|
+| **Slow** | `0.8` | Speaks slower than normal, articulates clearly, and pauses slightly between phrases |
+| **Normal** | `1.0` | Standard conversational pace — the default |
+| **Fast** | `1.2` | Fast, fluent, native-speaker pace |
+
+## Changing the rate
+
+Click the speed button in the top-right header to cycle through the three modes:
+
+```
+Normal → Slow → Fast → Normal → ...
+```
+
+The button is disabled while a session is active. You must end your current conversation before changing the rate.
+
+```typescript App.tsx
+const toggleSpeakingRate = () => {
+    // Cycle: 1.0 -> 0.8 -> 1.2 -> 1.0
+    setSpeakingRate(prev => {
+        if (prev === 1.0) return 0.8;
+        if (prev === 0.8) return 1.2;
+        return 1.0;
+    });
+};
+```
+
+## How the rate affects the AI
+
+The rate value is sent to `LiveApiService.connect()` and translated into a natural-language instruction added to the system prompt:
+
+```typescript liveApiService.ts
+let rateInstruction = "";
+if (speakingRate <= 0.8) {
+  rateInstruction = "IMPORTANT: Speak slower than normal. Articulate very clearly and pause slightly between phrases.";
+} else if (speakingRate < 1.0) {
+  rateInstruction = "IMPORTANT: Speak slightly slower and clearer than a native speaker.";
+} else if (speakingRate > 1.0) {
+  rateInstruction = "IMPORTANT: Speak at a fast, fluent native pace.";
+}
+```
+
+At `1.0` (Normal), no rate instruction is added — the AI defaults to its natural pace.
+
+<Note>
+  The speaking rate resets to Normal each time you reload the page. It is not persisted between browser sessions.
+</Note>
+
+## Choosing the right rate
+
+<CardGroup cols={3}>
+  <Card title="Slow" icon="snail">
+    Best for beginners or anyone studying a new lesson for the first time. Gives you time to hear each tone mark in Pinyin.
+  </Card>
+  <Card title="Normal" icon="person-walking">
+    Best for intermediate learners building conversational fluency. Matches real-world mainland Chinese speech.
+  </Card>
+  <Card title="Fast" icon="bolt">
+    Best for advanced learners preparing for real-life conversations or media comprehension.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Start a new lesson on Slow, then repeat it on Normal once you're comfortable. Finishing on Fast solidifies your listening comprehension at native speed.
+</Tip>

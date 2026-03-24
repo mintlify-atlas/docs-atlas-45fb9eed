@@ -1,0 +1,72 @@
+---
+title: "Speaking Rate"
+description: "Configure how fast the AI speaks during a Mandarin Talk session."
+---
+
+The speaking rate controls the pace at which the AI tutor speaks during a session. It is set before connecting and passed to `LiveApiService.connect()` as the `speakingRate` parameter, which injects a rate instruction into the AI's system prompt.
+
+## Rate values
+
+| Rate value | Label  | AI behavior |
+|------------|--------|-------------|
+| `0.8`      | Slow   | Speak slower than normal. Articulate very clearly and pause slightly between phrases. |
+| `1.0`      | Normal | Standard native pace. No rate instruction is added to the system prompt. |
+| `1.2`      | Fast   | Speak at a fast, fluent native pace. |
+
+## How it works
+
+When you start a session, the selected rate is translated into a plain-English instruction and appended to the AI's system prompt. The logic in `liveApiService.ts` builds this instruction as follows:
+
+```typescript services/liveApiService.ts
+let rateInstruction = "";
+if (speakingRate <= 0.8) {
+  rateInstruction = "IMPORTANT: Speak slower than normal. Articulate very clearly and pause slightly between phrases.";
+} else if (speakingRate < 1.0) {
+  rateInstruction = "IMPORTANT: Speak slightly slower and clearer than a native speaker.";
+} else if (speakingRate > 1.0) {
+  rateInstruction = "IMPORTANT: Speak at a fast, fluent native pace.";
+}
+```
+
+At the Normal rate (`1.0`), no rate instruction is included and the AI speaks at its default pace.
+
+## Cycling through rates
+
+The rate button in the header cycles through all three values in a fixed order. Each click advances to the next rate:
+
+```typescript App.tsx
+const toggleSpeakingRate = () => {
+    // Cycle: 1.0 -> 0.8 -> 1.2 -> 1.0
+    setSpeakingRate(prev => {
+        if (prev === 1.0) return 0.8;
+        if (prev === 0.8) return 1.2;
+        return 1.0;
+    });
+};
+```
+
+The button displays the current label — **Slow**, **Normal**, or **Fast** — and uses a `Gauge` icon from `lucide-react`.
+
+## Changing the rate
+
+The rate button is only active when the app is in the `DISCONNECTED` state. While a session is `CONNECTING` or `CONNECTED`, the button is disabled:
+
+```typescript App.tsx
+<button
+    onClick={toggleSpeakingRate}
+    disabled={connectionState !== ConnectionState.DISCONNECTED}
+    title={connectionState !== ConnectionState.DISCONNECTED ? "Disconnect to change speed" : "Change speaking speed"}
+>
+```
+
+To change the rate during a session, press **Stop** to disconnect, click the rate button to select the new rate, then press **Start** to reconnect.
+
+<Note>
+  The speaking rate is not persisted between page reloads. It resets to **Normal** (`1.0`) each time the app starts.
+</Note>
+
+<Tip>
+  - **Beginners** benefit most from the **Slow** rate. It gives you more time to parse tones and build listening comprehension before worrying about speed.
+  - **Intermediate learners** should use **Normal** to train their ear to native-speed speech patterns.
+  - **Advanced learners** can challenge themselves with **Fast** to simulate real conversational Mandarin.
+</Tip>

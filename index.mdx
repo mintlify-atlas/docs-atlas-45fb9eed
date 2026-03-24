@@ -1,97 +1,83 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Mandarin Talk"
+description: "AI-powered Mandarin conversation and pronunciation coaching — powered by the Gemini Live API"
 ---
 
-## Setting up
+<img
+  src="https://media.brand.dev/02037797-ccb2-40d2-87bd-71ce1fcee0d3.png"
+  alt="Mandarin Talk"
+  style={{ height: "60px", marginBottom: "24px" }}
+/>
 
-Get your documentation site up and running in minutes.
+## Practice Mandarin like never before
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Mandarin Talk puts a patient, always-available AI conversation partner in your browser. Speak freely, get real-time pronunciation scores, and read every sentence the AI says in Hanzi, Pinyin, and English — all at once.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get the app running locally in under 5 minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Pronunciation Coaching" icon="microphone" href="/features/pronunciation-coaching">
+    Understand how your speech is scored and how to improve
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Lesson Library" icon="book-open" href="/features/lesson-library">
+    Explore structured roleplay scenarios from Beginner to Advanced
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Architecture" icon="diagram-project" href="/reference/architecture">
+    See how the Gemini Live API powers real-time audio and subtitles
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key features
 
-Everything you need to create world-class documentation.
+<CardGroup cols={3}>
+  <Card title="Real-Time Conversation" icon="comments" href="/features/real-time-conversation">
+    Low-latency dialogue with a Gemini-powered AI tutor
+  </Card>
+  <Card title="Triple-Layered Subtitles" icon="closed-captioning" href="/features/subtitles">
+    Every AI sentence shown in Hanzi, Pinyin, and English simultaneously
+  </Card>
+  <Card title="Pronunciation Score" icon="gauge" href="/features/pronunciation-coaching">
+    0–100 score with specific tonal and articulation tips after every turn
+  </Card>
+  <Card title="3D Avatar" icon="user" href="/features/real-time-conversation">
+    Animated avatar that reacts to audio volume in real time
+  </Card>
+  <Card title="Speaking Rate Control" icon="sliders" href="/features/speaking-rate">
+    Switch between Slow, Normal, and Fast to match your level
+  </Card>
+  <Card title="Conversation History" icon="clock-rotate-left" href="/features/conversation-history">
+    Full session transcript with Pinyin and translations for review
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Getting started
 
-## Need inspiration?
+<Steps>
+  <Step title="Get a Gemini API key">
+    Sign up at [Google AI Studio](https://aistudio.google.com) and create a free API key.
+  </Step>
+  <Step title="Clone and install">
+    ```bash
+    git clone https://github.com/pwobus/Mandarin-Talk.git
+    cd Mandarin-Talk
+    npm install
+    ```
+  </Step>
+  <Step title="Add your API key">
+    Create `.env.local` in the project root and add:
+    ```bash .env.local
+    GEMINI_API_KEY=your_api_key_here
+    ```
+  </Step>
+  <Step title="Run the app">
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:5173](http://localhost:5173) in your browser, allow microphone access, and press **Start** to begin your first conversation.
+  </Step>
+</Steps>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Mandarin Talk requires microphone access and a modern browser with Web Audio API support (Chrome or Edge recommended).
+</Note>

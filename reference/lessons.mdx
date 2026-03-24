@@ -1,0 +1,214 @@
+---
+title: 'Lesson reference'
+description: 'Complete reference for all structured lessons available in Mandarin Talk, including scenarios, levels, and free talk mode.'
+---
+
+Mandarin Talk ships with five structured lessons covering everyday and professional Mandarin, plus an unstructured **Free Talk** mode. Each lesson provides a detailed roleplay scenario that is passed verbatim to the Gemini Live API as part of the system prompt when a session starts.
+
+## The `Lesson` interface
+
+```typescript
+export interface Lesson {
+  id: string;                                          // Unique slug
+  title: string;                                       // Display name
+  description: string;                                 // One-line summary
+  level: 'Beginner' | 'Intermediate' | 'Advanced';     // Difficulty tier
+  topic: string;                                       // Thematic category
+  scenario: string;                                    // Full AI context block
+}
+```
+
+The `scenario` field is the key property. It is a multi-line instruction block that tells the model which role to play, what goals to pursue, and which vocabulary to prioritise.
+
+## How lessons are applied
+
+When the user selects a lesson in the Lesson Library and presses **Start Conversation**, `App.tsx` reads the `scenario` field from the active lesson and passes it to `LiveApiService.connect()`:
+
+```typescript
+// App.tsx — handleConnect()
+const scenario = activeLesson ? activeLesson.scenario : undefined;
+await liveServiceRef.current.connect(scenario, speakingRate);
+```
+
+Inside `LiveApiService.connect()`, the scenario replaces the default free-talk context block in the system prompt:
+
+```typescript
+// liveApiService.ts
+const contextInstruction = scenarioInstruction || `CONVERSATION CONTEXT:
+Help the user practice spoken Mandarin in a free-flowing conversation.
+Speak with a clear, standard accent. Keep sentences simple for a learner.
+Ask questions to keep the conversation going.`;
+```
+
+The full system instruction assembled by the service is:
+
+```
+{baseInstruction}     ← core coaching rules + tool usage
+{rateInstruction}     ← speaking speed directive (omitted at 1.0×)
+{contextInstruction}  ← lesson scenario OR free-talk fallback
+```
+
+<Note>
+Switching lessons while a session is active triggers an automatic disconnect. The new scenario only takes effect when a fresh connection is started.
+</Note>
+
+## Level system
+
+| Level | Description |
+|-------|-------------|
+| **Beginner** | Short sentences, everyday vocabulary, gentle error correction. |
+| **Intermediate** | Longer exchanges, direction words, negotiation phrases. |
+| **Advanced** | Formal registers, business etiquette, complex sentence structures. |
+
+## Free Talk mode
+
+When no lesson is selected, the service uses a general free-talk context. The AI acts as a patient conversation partner — asking open questions, correcting grammar gently, and keeping sentences accessible for a learner. There is no fixed role or vocabulary constraint.
+
+```typescript
+// Default context when scenarioInstruction is undefined
+`CONVERSATION CONTEXT:
+Help the user practice spoken Mandarin in a free-flowing conversation.
+Speak with a clear, standard accent. Keep sentences simple for a learner.
+Ask questions to keep the conversation going.`
+```
+
+## Lesson catalogue
+
+<AccordionGroup>
+  <Accordion title="Self Introduction — Beginner">
+    **ID:** `intro`  
+    **Topic:** Social  
+    **Level:** Beginner  
+
+    **Description:** Learn how to introduce yourself, state your name, nationality, and profession.
+
+    **Full scenario instruction:**
+
+    ```text
+    ROLEPLAY SCENARIO:
+    You are meeting the user for the first time at a social gathering.
+    Goal: Help the user practice introducing themselves (Name, Country, Job).
+    1. Start by saying hello and asking their name (你叫什么名字？).
+    2. Ask where they are from (你是哪国人？).
+    3. Ask what they do for work (你做什么工作？).
+    Correct them gently if they make grammar mistakes. Keep sentences short and simple.
+    ```
+
+    **Key phrases practiced:**
+    - 你叫什么名字？ — *What is your name?*
+    - 你是哪国人？ — *What country are you from?*
+    - 你做什么工作？ — *What do you do for work?*
+  </Accordion>
+
+  <Accordion title="Ordering Coffee — Beginner">
+    **ID:** `coffee`  
+    **Topic:** Daily Life  
+    **Level:** Beginner  
+
+    **Description:** Practice ordering drinks, specifying size, sugar/ice levels, and paying.
+
+    **Full scenario instruction:**
+
+    ```text
+    ROLEPLAY SCENARIO:
+    You are a barista at a coffee shop. The user is a customer.
+    Goal: The user needs to order a drink.
+    1. Welcome the customer and ask what they want to drink (你好，要喝点什么？).
+    2. Ask about temperature (hot/iced) and size (medium/large).
+    3. Ask about sugar preference.
+    4. Tell them the price and ask for payment (WeChat Pay or Alipay).
+    Focus on vocabulary: 咖啡 (coffee), 冰 (ice), 热 (hot), 杯 (cup), 扫码 (scan code).
+    ```
+
+    **Key vocabulary:**
+    - 咖啡 *kāfēi* — coffee
+    - 冰 *bīng* — ice / iced
+    - 热 *rè* — hot
+    - 杯 *bēi* — cup (measure word)
+    - 扫码 *sǎo mǎ* — scan (payment) code
+  </Accordion>
+
+  <Accordion title="Taking a Taxi — Intermediate">
+    **ID:** `taxi`  
+    **Topic:** Travel  
+    **Level:** Intermediate  
+
+    **Description:** Give directions to a taxi driver, discuss routes, and handle payment.
+
+    **Full scenario instruction:**
+
+    ```text
+    ROLEPLAY SCENARIO:
+    You are a Beijing taxi driver. The user is the passenger.
+    Goal: The user needs to tell you where to go.
+    1. Ask where they are going (师傅，去哪儿？).
+    2. Pretend not to know the exact small street, ask for a landmark nearby.
+    3. Chat briefly about the traffic (堵车) or weather while "driving".
+    4. Arrive and ask for the fare.
+    Encourage the user to use direction words: 左转 (turn left), 右转 (turn right), 直走 (go straight).
+    ```
+
+    **Key vocabulary:**
+    - 去哪儿？ *qù nǎr?* — Where are you going?
+    - 堵车 *dǔ chē* — traffic jam
+    - 左转 *zuǒ zhuǎn* — turn left
+    - 右转 *yòu zhuǎn* — turn right
+    - 直走 *zhí zǒu* — go straight
+  </Accordion>
+
+  <Accordion title="Bargaining at the Market — Intermediate">
+    **ID:** `market`  
+    **Topic:** Shopping  
+    **Level:** Intermediate  
+
+    **Description:** Buy fruit or souvenirs and try to negotiate a cheaper price.
+
+    **Full scenario instruction:**
+
+    ```text
+    ROLEPLAY SCENARIO:
+    You are a street vendor selling fruit and souvenirs in a market. The user is a tourist.
+    Goal: The user tries to buy apples or a gift and wants a discount.
+    1. Offer your goods enthusiastically (来看一看，很便宜！).
+    2. State a slightly high price when asked.
+    3. If the user bargains, react with mock shock ("Too cheap! I lose money!").
+    4. Eventually agree to a middle price.
+    Fun and lively tone.
+    ```
+
+    **Key vocabulary:**
+    - 来看一看 *lái kàn yi kàn* — Come take a look
+    - 便宜 *piányí* — cheap / inexpensive
+    - 多少钱？ *duōshao qián?* — How much does it cost?
+    - 打折 *dǎ zhé* — discount
+    - 太贵了 *tài guì le* — Too expensive
+  </Accordion>
+
+  <Accordion title="Business Meeting — Advanced">
+    **ID:** `business`  
+    **Topic:** Professional  
+    **Level:** Advanced  
+
+    **Description:** Formal greetings, exchanging business cards, and discussing a schedule.
+
+    **Full scenario instruction:**
+
+    ```text
+    ROLEPLAY SCENARIO:
+    You are a manager at a Chinese tech company hosting a foreign partner (the user).
+    Goal: Formal business greeting and schedule discussion.
+    1. Use formal language (您, 幸会).
+    2. Exchange business cards (simulated).
+    3. Discuss the agenda for the afternoon meeting.
+    4. Ask if they need any accommodation arrangements.
+    Focus on formal business etiquette and vocabulary.
+    ```
+
+    **Key vocabulary:**
+    - 您 *nín* — formal "you"
+    - 幸会 *xìng huì* — honoured to meet you
+    - 名片 *míngpiàn* — business card
+    - 议程 *yìchéng* — agenda
+    - 安排 *ānpái* — arrangement / to arrange
+  </Accordion>
+</AccordionGroup>

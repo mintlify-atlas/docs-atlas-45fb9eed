@@ -1,0 +1,196 @@
+---
+title: 'Architecture'
+description: 'How Mandarin Talk works under the hood — from browser audio capture through the Gemini Live API to 3D avatar animation.'
+---
+
+Mandarin Talk is a real-time AI conversation app that streams raw microphone audio to Google's Gemini Live API and plays synthesized speech back through the browser. This page explains the full stack: how components are structured, how audio flows in both directions, and how the two Gemini function tools drive subtitles and pronunciation feedback.
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend framework | React 19 + Vite + TypeScript |
+| 3D rendering | Three.js via `@react-three/fiber` and `@react-three/drei` |
+| AI model | Gemini Live API — `gemini-2.5-flash-native-audio-preview-09-2025` |
+| Styling | Tailwind CSS |
+| Icons | Lucide React |
+
+## Audio pipeline
+
+### Input: microphone to Gemini Live
+
+<Steps>
+  <Step title="Acquire the microphone stream">
+    `LiveApiService.connect()` calls `navigator.mediaDevices.getUserMedia({ audio: true })` to get a `MediaStream`. If the device is not found or permission is denied, a fatal error is surfaced immediately.
+  </Step>
+  <Step title="Create a 16 kHz AudioContext">
+    An `AudioContext` is created at exactly 16 000 Hz — the sample rate the Gemini Live API expects for PCM input.
+  </Step>
+  <Step title="Route audio through ScriptProcessorNode">
+    The stream is connected: `MediaStreamAudioSourceNode` → `GainNode` (gain: 1.2) → `ScriptProcessorNode` (buffer size: 4 096 samples) → `AudioContext.destination`.
+  </Step>
+  <Step title="Downsample and buffer">
+    Each `onaudioprocess` event calls `downsampleTo16k()` using linear interpolation. Downsampled chunks are accumulated until they reach the 4 096-sample threshold (256 ms of audio at 16 kHz), then merged with `concatenateFloat32Buffers()`.
+  </Step>
+  <Step title="Convert to PCM and send">
+    `createPcmBlob()` converts `Float32Array` samples to little-endian `Int16` PCM and wraps the result in a `Blob` with MIME type `audio/pcm;rate=16000`. The blob is sent to the active Gemini session via `session.sendRealtimeInput({ media: pcmBlob })` through a serial send queue.
+  </Step>
+</Steps>
+
+### Output: Gemini Live to speakers
+
+<Steps>
+  <Step title="Receive base64 audio chunks">
+    Incoming `LiveServerMessage` objects are inspected for `serverContent.modelTurn.parts[0].inlineData.data`. When present, the base64 string is decoded to a `Uint8Array` by `base64ToBytes()`.
+  </Step>
+  <Step title="Decode to AudioBuffer">
+    `decodeAudioData()` converts the raw `Int16` PCM bytes (24 000 Hz, mono) into a Web Audio API `AudioBuffer` by normalising each sample to the `[-1.0, 1.0]` float range.
+  </Step>
+  <Step title="Schedule playback">
+    An `AudioBufferSourceNode` is connected through the `AnalyserNode` to the 24 000 Hz output `AudioContext`. Consecutive chunks are scheduled using a monotonically-increasing `nextStartTime` to produce gapless playback.
+  </Step>
+  <Step title="Feed volume to the avatar">
+    A `requestAnimationFrame` loop reads `getByteFrequencyData()` from the `AnalyserNode`, averages all frequency bins, normalises to `[0, 1]`, and fires the `onAudioVolume` callback. `App.tsx` stores this value in state and passes it to `Avatar3D` every frame.
+  </Step>
+</Steps>
+
+<Note>
+When the server sends an `interrupted` signal, all scheduled audio sources are stopped immediately, the start-time cursor is reset, and the in-flight input transcription buffer is cleared.
+</Note>
+
+## Component reference
+
+<CardGroup cols={2}>
+  <Card title="App.tsx" icon="layout-dashboard">
+    Root component and central state hub. Owns `connectionState`, `currentSubtitle`, `pronunciationFeedback`, `history`, `audioVolume`, `activeLesson`, and `speakingRate`. Creates the single `LiveApiService` instance on mount via `useRef` and wires all service callbacks to state setters. Handles lesson selection, speaking-rate cycling (Slow / Normal / Fast), and disconnect-before-lesson-switch logic.
+  </Card>
+  <Card title="LiveApiService" icon="activity">
+    Class that encapsulates the entire Gemini Live session lifecycle. Manages microphone acquisition, two `AudioContext` instances (16 kHz input, 24 kHz output), the `ScriptProcessorNode` audio loop, a serial send queue, auto-reconnect on transient internal errors, and visibility-change audio context resumption for mobile browsers.
+  </Card>
+  <Card title="Avatar3D" icon="user">
+    Three.js scene rendered via `@react-three/fiber`. Contains a procedural cartoon head (`CartoonHead`) built from `THREE.MeshStandardMaterial` primitives. Receives the normalised audio `volume` prop and animates the mouth open/close scale each frame via `useFrame`. Eyes track the mouse cursor and blink randomly. The head sways on an idle sine curve and nods subtly while volume is above 0.1.
+  </Card>
+  <Card title="Controls" icon="phone">
+    Stateless button bar at the bottom of the viewport. Renders a **Start Conversation** button (disabled while connecting) or an **End Call** button depending on `ConnectionState`. Shows a pulsing microphone icon when connected.
+  </Card>
+  <Card title="SubtitleDisplay" icon="subtitles">
+    Renders the three-line subtitle block: large Hanzi characters, Pinyin in emerald text, and an italic English translation. Fades and slides in on each new `SubtitleData` object. Shows a waiting prompt when `data` is `null`.
+  </Card>
+  <Card title="FeedbackCard" icon="bar-chart">
+    Appears after the AI calls `provide_pronunciation_feedback`. Displays a circular SVG score gauge, the recognised Hanzi text, its Pinyin, and the written feedback. Colour-coded: emerald (≥ 80), yellow (60–79), rose (< 60). Dismissible via an X button.
+  </Card>
+  <Card title="HistoryPanel" icon="message-square">
+    Scrollable conversation transcript visible in the left column on desktop. Auto-scrolls to the latest entry. AI turns show Hanzi, Pinyin, and an English translation; user turns show the raw recognised text. Each entry has a timestamp formatted to HH:MM.
+  </Card>
+  <Card title="LessonLibrary" icon="book-open">
+    Modal overlay for browsing and selecting structured lessons. Passes the selected `Lesson` object back to `App.tsx`. Selecting a new lesson while connected triggers a disconnect first.
+  </Card>
+</CardGroup>
+
+## Gemini function tools
+
+The service registers two `FunctionDeclaration` objects with the Gemini session. The model calls them autonomously during conversation — no client-side parsing of the audio transcript is required.
+
+### `update_subtitles`
+
+Called by the model **while it is speaking** to provide a simultaneous written transcript.
+
+```typescript
+{
+  name: 'update_subtitles',
+  parameters: {
+    hanzi:   string, // Chinese characters
+    pinyin:  string, // Romanisation with tone marks
+    english: string, // English translation
+  }
+}
+```
+
+When received, `LiveApiService` fires `onSubtitle(data: SubtitleData)`. `App.tsx` updates `currentSubtitle` state (driving `SubtitleDisplay`) and appends an `'ai'` entry to the conversation history.
+
+### `provide_pronunciation_feedback`
+
+Called by the model **after the user speaks Mandarin** to evaluate their pronunciation.
+
+```typescript
+{
+  name: 'provide_pronunciation_feedback',
+  parameters: {
+    userText: string, // Chinese text the user spoke
+    pinyin:   string, // Pinyin of what was heard
+    score:    number, // 0–100 accuracy score
+    feedback: string, // Constructive tip on tones or articulation
+  }
+}
+```
+
+When received, `LiveApiService` fires `onPronunciationFeedback(feedback: PronunciationFeedback)`. `App.tsx` updates `pronunciationFeedback` state, which renders `FeedbackCard`.
+
+Both tools receive an acknowledgement response `{ result: 'ok' }` queued immediately after the callbacks fire.
+
+## TypeScript interfaces
+
+All shared data shapes are defined in `types.ts`.
+
+```typescript
+export interface SubtitleData {
+  hanzi: string;
+  pinyin: string;
+  english: string;
+}
+
+export interface PronunciationFeedback {
+  userText: string;
+  pinyin: string;
+  score: number;    // 0–100
+  feedback: string;
+}
+
+export interface ConversationTurn {
+  id: string;
+  role: 'user' | 'ai';
+  text: string;         // Hanzi for AI, recognised text for user
+  pinyin?: string;
+  translation?: string;
+  timestamp: number;    // Unix ms
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  description: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  topic: string;
+  scenario: string;     // System-prompt context block passed to LiveApiService
+}
+
+export enum ConnectionState {
+  DISCONNECTED = 'DISCONNECTED',
+  CONNECTING   = 'CONNECTING',
+  CONNECTED    = 'CONNECTED',
+  ERROR        = 'ERROR',
+}
+
+export interface AudioVolumeState {
+  volume: number; // 0 to 1
+}
+```
+
+## Connection state machine
+
+The `ConnectionState` enum drives all UI affordances — button labels, status pill colour, and microphone icon animation.
+
+| State | Description |
+|-------|-------------|
+| `DISCONNECTED` | Default. No session active, microphone released. |
+| `CONNECTING` | `connect()` called; waiting for WebSocket `onopen`. |
+| `CONNECTED` | Session open; audio streaming active. |
+| `ERROR` | Fatal error encountered; session stopped. |
+
+## Error handling and recovery
+
+`LiveApiService` applies a two-tier strategy:
+
+1. **Transient network errors** — WebSocket and "Network error" / "Failed to fetch" strings are logged as warnings and silently ignored so a momentary blip does not interrupt the session.
+2. **Internal errors** — The service attempts **one** automatic reconnect (`MAX_INTERNAL_ERROR_RETRIES = 1`). It stops the current session, resets all flags, emits a brief `"Reconnecting..."` notice, and calls `connect()` again after 500 ms using the same `scenarioInstruction` and `speakingRate`. If a second internal error occurs, it escalates to a fatal error.
+3. **Fatal errors** — `handleFatalError()` sets a one-way `hasReportedFatalError` flag, fires `onError` and `onStateChange('ERROR')`, then calls `stop()` to fully tear down the session.

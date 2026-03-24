@@ -1,0 +1,54 @@
+---
+title: "Introduction"
+description: "Mandarin Talk is a browser-based AI conversation partner that gives you real-time Mandarin practice with instant pronunciation feedback."
+---
+
+Mandarin Talk gives Mandarin learners an always-available, low-pressure environment to build fluency. Speak naturally into your microphone, and an AI partner responds in real time — coaching your pronunciation, providing layered subtitles, and keeping the conversation going at your pace.
+
+## How it works
+
+Mandarin Talk runs entirely in the browser. When you press **Start**, it opens a live audio session with [Google Gemini](https://aistudio.google.com) using the Gemini Live API (`gemini-2.5-flash-native-audio-preview`). Your microphone audio is streamed continuously to the model, which responds with spoken Mandarin and simultaneously calls structured tools to produce subtitles and pronunciation scores — all with minimal latency.
+
+No server of your own is needed. The app reads your `GEMINI_API_KEY` from a local `.env.local` file and connects directly to the Gemini API from the browser.
+
+<Note>
+  Mandarin Talk uses the Web Audio API for microphone capture and real-time audio playback. Chrome and Edge provide the most consistent experience.
+</Note>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Real-time conversation" icon="comments">
+    Low-latency dialogue powered by the Gemini Live API. The AI speaks Mandarin, listens to your replies, and responds naturally — like a patient tutor always available to practice with.
+  </Card>
+  <Card title="Triple-layered subtitles" icon="closed-captioning">
+    Every sentence the AI speaks appears simultaneously in Hanzi (characters), Pinyin (romanization with tones), and an English translation — so you never lose the meaning.
+  </Card>
+  <Card title="Pronunciation coaching" icon="gauge">
+    After you speak Mandarin, the AI analyzes your tones and articulation and returns a 0–100 pronunciation score alongside specific, actionable tips.
+  </Card>
+  <Card title="Curated lesson library" icon="book-open">
+    Choose from structured roleplay scenarios — ordering coffee, taking a taxi, bargaining at a market, or running a business meeting — across Beginner, Intermediate, and Advanced levels.
+  </Card>
+  <Card title="Speaking rate control" icon="sliders">
+    Toggle between Slow, Normal, and Fast to match your current listening level. The AI adjusts its pace and articulation accordingly.
+  </Card>
+  <Card title="Conversation history" icon="clock-rotate-left">
+    A full session transcript — with Pinyin and translations for every AI turn — lets you review new vocabulary and track your progress after each practice session.
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+Before you run Mandarin Talk, make sure you have the following:
+
+- **Node.js** (v18 or later) — required to install dependencies and run the Vite dev server
+- **A modern browser** — Chrome or Edge recommended; both support the Web Audio API and WebSocket connections required by the Gemini Live API
+- **A microphone** — built-in or external; the app requests microphone access when you press Start
+- **A Gemini API key** — free to create at [Google AI Studio](https://aistudio.google.com)
+
+## Ready to start?
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Get Mandarin Talk running locally in minutes — clone the repo, add your API key, and start your first conversation.
+</Card>

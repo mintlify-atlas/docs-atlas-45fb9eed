@@ -1,0 +1,122 @@
+---
+title: 'Troubleshooting'
+description: 'Common issues and how to resolve them when using Mandarin Talk.'
+---
+
+<Note>
+Mandarin Talk uses the Web Audio API and WebSocket-based streaming. For the best experience, use a recent version of **Google Chrome** or **Microsoft Edge** on desktop. Safari has limited support for some Web Audio features, and Firefox may exhibit higher latency.
+</Note>
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="No microphone found">
+    **Symptom:** After pressing **Start Conversation**, an error banner appears immediately with the message: *"No microphone found. Please connect a microphone and try again."*
+
+    **Cause:** `navigator.mediaDevices.getUserMedia()` threw a `NotFoundError` (or a message containing `"Requested device not found"`), which means no audio input device is available to the browser.
+
+    **Solution:**
+    1. Confirm a microphone is physically connected to your computer.
+    2. On external USB or Bluetooth microphones, check that the device appears in your operating system's sound settings.
+    3. Restart your browser after connecting the microphone; browsers sometimes do not detect devices plugged in after launch.
+    4. If you are on a device with a headset that includes a microphone, ensure the headset is fully inserted.
+  </Accordion>
+
+  <Accordion title="Microphone permission denied">
+    **Symptom:** Error banner reads: *"Microphone permission denied. Please allow microphone access settings."*
+
+    **Cause:** `getUserMedia()` threw a `NotAllowedError` or `PermissionDeniedError`. The browser blocked microphone access — either because the user dismissed the permission prompt, or because microphone access is blocked at the browser or OS level.
+
+    **Solution:**
+    <Steps>
+      <Step title="Check the browser permission">
+        In Chrome or Edge, click the padlock icon in the address bar. Find **Microphone** and change it from **Blocked** to **Allow**.
+      </Step>
+      <Step title="Check OS-level permissions">
+        On macOS: **System Settings → Privacy & Security → Microphone** — ensure your browser is listed and toggled on.
+        On Windows: **Settings → Privacy → Microphone** — ensure "Allow apps to access your microphone" is enabled.
+      </Step>
+      <Step title="Reload and try again">
+        After changing permissions, reload the page and press **Start Conversation** again.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Connection drops and automatically reconnects">
+    **Symptom:** A brief notice *"Session hiccup detected. Reconnecting..."* appears and the connection state cycles back through `CONNECTING`.
+
+    **Cause:** The Gemini Live session encountered a transient internal error. `LiveApiService` is designed to attempt **one automatic reconnect** before surfacing a fatal error. The reconnect fires after a 500 ms delay and reuses the same lesson scenario and speaking rate.
+
+    **Solution:** In most cases no action is required — the session will reconnect and resume automatically. If the reconnect succeeds, conversation continues as normal. If the second attempt also fails, the session escalates to a fatal error (see the next entry).
+  </Accordion>
+
+  <Accordion title="Session interrupted — cannot reconnect">
+    **Symptom:** Error banner reads: *"Session interrupted (Internal Error). Please restart."* The connection state changes to `ERROR` and does not recover automatically.
+
+    **Cause:** The service encountered an internal error twice in the same session. After exhausting `MAX_INTERNAL_ERROR_RETRIES = 1`, `handleFatalError()` is called, which permanently stops the session.
+
+    **Solution:**
+    1. Dismiss the error banner by clicking **✕**.
+    2. Press **End Call** if the button is visible.
+    3. Press **Start Conversation** to open a fresh session.
+
+    If the error recurs consistently, check your internet connection and verify your `API_KEY` environment variable is valid.
+  </Accordion>
+
+  <Accordion title="Network instability — intermittent errors">
+    **Symptom:** The connection seems to work but occasionally stutters; no visible error banner appears.
+
+    **Cause:** `LiveApiService` deliberately filters transient WebSocket and network errors (strings containing `"Network error"`, `"Failed to fetch"`, or `"WebSocket"`). These are treated as warnings and do not terminate the session, since a brief network blip should not abort an in-progress conversation.
+
+    **Solution:**
+    - Move closer to your Wi-Fi router or switch to a wired connection.
+    - Disable VPNs or proxies that may interfere with WebSocket traffic.
+    - If instability is severe enough to affect audio quality, end the session and reconnect on a more stable connection.
+  </Accordion>
+
+  <Accordion title="Audio stops suddenly on mobile">
+    **Symptom:** While using the app on a mobile browser, audio playback stops — typically after switching to another app or locking the screen and returning to the browser tab.
+
+    **Cause:** Mobile browsers suspend `AudioContext` instances when the page is backgrounded or the screen turns off. This is standard browser behaviour to conserve battery.
+
+    **Solution:** Mandarin Talk handles this automatically. `LiveApiService` listens for the `document.visibilitychange` event via `handleVisibilityChange`. When the tab becomes visible again and the service is connected, both the input and output `AudioContext` instances are resumed:
+
+    ```typescript
+    private handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && this.isConnected) {
+        if (this.inputAudioContext?.state === 'suspended') {
+          await this.inputAudioContext.resume();
+        }
+        if (this.outputAudioContext?.state === 'suspended') {
+          await this.outputAudioContext.resume();
+        }
+      }
+    };
+    ```
+
+    If audio does not resume automatically, end the session and start a new one.
+  </Accordion>
+
+  <Accordion title="Failed to establish connection">
+    **Symptom:** Error banner reads: *"Failed to establish connection to AI."* The session never reaches the `CONNECTED` state.
+
+    **Cause:** The `LiveApiService` constructor initialises `GoogleGenAI` with `process.env.API_KEY`. If this environment variable is missing or contains an invalid key, the Gemini Live session promise will reject immediately.
+
+    **Solution:**
+    <Steps>
+      <Step title="Verify the API key is set">
+        Confirm that the `API_KEY` environment variable is present in your `.env` file or deployment environment.
+      </Step>
+      <Step title="Check the key is valid">
+        Log in to [Google AI Studio](https://aistudio.google.com) and verify the key has access to the Gemini Live API and the `gemini-2.5-flash-native-audio-preview-09-2025` model.
+      </Step>
+      <Step title="Restart the dev server">
+        After updating environment variables, restart the Vite dev server (`vite`) so the new values are picked up by `import.meta.env` / `process.env`.
+      </Step>
+    </Steps>
+
+    <Warning>
+    Never commit your `API_KEY` to version control. Add `.env` to your `.gitignore` file.
+    </Warning>
+  </Accordion>
+</AccordionGroup>

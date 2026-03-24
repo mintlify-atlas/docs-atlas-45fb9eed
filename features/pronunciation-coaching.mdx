@@ -1,0 +1,87 @@
+---
+title: "Pronunciation Coaching"
+description: "Instant 0–100 pronunciation scores with tonal and articulation feedback after every turn"
+---
+
+After each time you speak Mandarin, the AI silently evaluates your pronunciation and produces a score card in the right panel. This happens automatically — you don't need to request feedback.
+
+## How scoring works
+
+The AI listens to your speech, transcribes it, then calls the `provide_pronunciation_feedback` Gemini function tool with:
+
+- The Chinese text you spoke (`userText`)
+- Its Pinyin romanization (`pinyin`)
+- A score from 0 to 100 (`score`)
+- Specific, constructive tips on your tones and articulation (`feedback`)
+
+```typescript types.ts
+export interface PronunciationFeedback {
+  userText: string;     // The Chinese text the user spoke
+  pinyin: string;       // Pinyin of what the user spoke
+  score: number;        // 0–100 pronunciation accuracy score
+  feedback: string;     // Specific advice on tones or articulation
+}
+```
+
+## Score ranges
+
+The feedback card uses color-coding to give you an at-a-glance quality signal:
+
+| Score | Color | Icon | Meaning |
+|---|---|---|---|
+| 80–100 | Green | ✓ | Good pronunciation — native-like or near-native |
+| 60–79 | Yellow | ↑ | Average — generally understandable with room to improve |
+| 0–59 | Red | ✗ | Needs work — specific tones or sounds are off |
+
+The score is displayed as a circular progress ring alongside your exact score number.
+
+## The Gemini function tool
+
+The AI is instructed to call this tool silently — it does not interrupt the conversation flow. The tool definition used is:
+
+```typescript liveApiService.ts
+const pronunciationFeedbackTool: FunctionDeclaration = {
+  name: 'provide_pronunciation_feedback',
+  description: "Provides feedback on the user's Mandarin pronunciation after they speak.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      userText: { type: Type.STRING, description: 'The Chinese text the user spoke.' },
+      pinyin: { type: Type.STRING, description: 'The Pinyin of what the user spoke.' },
+      score: { type: Type.NUMBER, description: 'A score from 0 to 100 representing pronunciation accuracy.' },
+      feedback: { type: Type.STRING, description: 'Specific, constructive advice on tones or articulation.' },
+    },
+    required: ['userText', 'pinyin', 'score', 'feedback'],
+  },
+};
+```
+
+## Reading your feedback
+
+The feedback card shows:
+
+1. **Your text** — the Hanzi characters the AI heard you say
+2. **Pinyin** — the romanization of what you said
+3. **Score ring** — circular progress indicator with the numeric score
+4. **Coaching tip** — a sentence or two explaining what to adjust
+
+You can dismiss the card by clicking the **×** button in the top-right corner. A new card will appear after your next speaking turn.
+
+<AccordionGroup>
+  <Accordion title="Why did I get a low score even though I tried hard?">
+    Mandarin tones are highly sensitive. A common cause is applying the wrong tone to a syllable — for example, saying "mā" (mother) with a falling tone instead of a level one. The feedback text will call out the specific syllable to work on.
+  </Accordion>
+  <Accordion title="Does the AI score English speech?">
+    No. The AI only scores Mandarin speech. If you speak English, the AI will respond in Mandarin and the pronunciation tool will not trigger.
+  </Accordion>
+  <Accordion title="Can I see past pronunciation scores?">
+    Not directly — the score card shows only the most recent turn. The Conversation History panel records your spoken text but not the numeric score.
+  </Accordion>
+  <Accordion title="How do I improve my score?">
+    Focus on the four Mandarin tones. Practice short words in isolation first, then phrases. Use the Slow speaking rate to give yourself more time to hear each syllable the AI produces, then mirror it.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  Set the speaking rate to **Slow** when starting out. The AI will articulate more clearly, making it easier to identify and mimic correct tones.
+</Tip>

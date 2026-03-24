@@ -1,0 +1,92 @@
+---
+title: "Real-Time Conversation"
+description: "Low-latency AI dialogue powered by the Gemini Live API with a 3D animated avatar"
+---
+
+Mandarin Talk connects you directly to a Gemini Live session, giving you a natural conversation partner that listens and responds in real time. The animated 3D avatar reacts to audio volume, providing a more immersive experience than a simple text chatbot.
+
+## Connection states
+
+The app transitions through four connection states:
+
+<CardGroup cols={2}>
+  <Card title="DISCONNECTED" icon="circle-xmark">
+    Initial state. No session is active. You can change the speaking rate and select a lesson.
+  </Card>
+  <Card title="CONNECTING" icon="spinner">
+    The app is acquiring microphone access and establishing a Gemini Live session. The Start button shows a spinner.
+  </Card>
+  <Card title="CONNECTED" icon="circle-check">
+    Live session is active. The microphone icon pulses and audio is streaming bidirectionally.
+  </Card>
+  <Card title="ERROR" icon="triangle-exclamation">
+    A fatal error occurred. The error banner appears and the session is stopped.
+  </Card>
+</CardGroup>
+
+The connection state badge in the top-right corner reflects the current state at all times.
+
+```typescript types.ts
+export enum ConnectionState {
+  DISCONNECTED = 'DISCONNECTED',
+  CONNECTING = 'CONNECTING',
+  CONNECTED = 'CONNECTED',
+  ERROR = 'ERROR',
+}
+```
+
+## Starting and ending a conversation
+
+<Steps>
+  <Step title="Select a lesson (optional)">
+    Open the **Library** menu in the header to choose a structured lesson scenario, or leave it on Free Talk mode.
+  </Step>
+  <Step title="Set your speaking rate (optional)">
+    Click the speed button in the header (Slow / Normal / Fast) before connecting. This cannot be changed mid-session.
+  </Step>
+  <Step title="Press Start Conversation">
+    Click the green **Start Conversation** button at the bottom. The app requests microphone permission and establishes the Gemini Live session.
+  </Step>
+  <Step title="Speak naturally">
+    Once connected, speak Mandarin (or any language to start). The AI will respond with audio, and subtitles will appear in the center panel.
+  </Step>
+  <Step title="End the session">
+    Click the red **End Call** button to close the session and stop the microphone.
+  </Step>
+</Steps>
+
+<Note>
+  The first time you use the app, your browser will ask for microphone permission. You must allow access for the app to function.
+</Note>
+
+## The 3D avatar
+
+The avatar is built with [React Three Fiber](https://docs.pmnd.rs/react-three-fiber) and Three.js. It features:
+
+- **Lip sync** — the mouth opens and closes proportionally to the AI's audio output volume
+- **Eye tracking** — the eyes follow your cursor position
+- **Idle animation** — subtle head sway when the AI is not speaking
+- **Speaking nod** — a gentle nodding motion when audio volume is above 0.1
+
+The avatar receives a normalized `volume` prop (0–1) from the `AnalyserNode` attached to the audio output context:
+
+```typescript Avatar3D.tsx
+interface Avatar3DProps {
+  volume: number; // 0 to 1
+}
+```
+
+Volume is sampled at every animation frame using `requestAnimationFrame` and sent to the avatar via React state in `App.tsx`.
+
+## Audio pipeline overview
+
+The app streams audio in both directions simultaneously:
+
+| Direction | Path |
+|---|---|
+| Input (your voice) | Microphone → `ScriptProcessorNode` → downsampled to 16kHz PCM → Gemini Live |
+| Output (AI voice) | Gemini Live → base64 audio chunks → `AudioContext` (24kHz) → speakers |
+
+<Tip>
+  For the best audio quality, use headphones to prevent microphone feedback during the AI's response.
+</Tip>

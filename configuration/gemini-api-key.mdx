@@ -1,0 +1,70 @@
+---
+title: "Gemini API Key"
+description: "How to obtain and configure the Gemini API key required to run Mandarin Talk."
+---
+
+Mandarin Talk connects directly to the [Gemini Live API](https://aistudio.google.com) from your browser. Every connection requires a valid Gemini API key to authenticate. Without it, the app cannot start a session.
+
+The key is read at runtime by `LiveApiService`:
+
+```typescript services/liveApiService.ts
+this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+```
+
+Vite does not expose `process.env` variables by default. This project uses a custom Vite configuration that maps `GEMINI_API_KEY` from `.env.local` to `process.env.API_KEY` at build time. You set `GEMINI_API_KEY` in your environment file, and the app picks it up as `process.env.API_KEY`.
+
+## Gemini model
+
+Mandarin Talk uses the following model for all sessions:
+
+```typescript services/liveApiService.ts
+const MODEL_NAME = 'gemini-2.5-flash-native-audio-preview-09-2025';
+```
+
+This is a native audio model that supports real-time bidirectional audio streaming — required for live conversation and pronunciation coaching.
+
+## Setting up your API key
+
+<Steps>
+  <Step title="Get a key from Google AI Studio">
+    Go to [https://aistudio.google.com](https://aistudio.google.com) and sign in with a Google account.
+
+    Click **Get API key**, then click **Create API key**. Select or create a Google Cloud project when prompted, then copy the generated key.
+
+    <Note>
+      The Gemini API free tier is sufficient for personal development and practice sessions. You do not need to set up billing to get started.
+    </Note>
+  </Step>
+
+  <Step title="Create .env.local in the project root">
+    In the root directory of the cloned repository, create a file named `.env.local`:
+
+    ```bash
+    touch .env.local
+    ```
+
+    This file is already listed in `.gitignore` so it will not be committed to version control.
+  </Step>
+
+  <Step title="Add your key">
+    Open `.env.local` and add the following line, replacing `your_key_here` with the key you copied:
+
+    ```bash .env.local
+    GEMINI_API_KEY=your_key_here
+    ```
+  </Step>
+
+  <Step title="Restart the dev server">
+    If the dev server is already running, stop it and restart it so Vite picks up the new environment variable:
+
+    ```bash
+    npm run dev
+    ```
+
+    Vite only reads `.env.local` at startup. Changes to the file are not hot-reloaded.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit your API key to version control. If you accidentally expose a key, revoke it immediately in [Google AI Studio](https://aistudio.google.com) and generate a new one.
+</Warning>
