@@ -105,18 +105,22 @@ Mandarin Talk uses the Web Audio API and WebSocket-based streaming. For the best
     **Solution:**
     <Steps>
       <Step title="Verify the API key is set">
-        Confirm that the `API_KEY` environment variable is present in your `.env` file or deployment environment.
+        Confirm that `GEMINI_API_KEY` is set in your `.env.local` file in the project root. Vite maps this to `process.env.API_KEY` at build time.
       </Step>
       <Step title="Check the key is valid">
         Log in to [Google AI Studio](https://aistudio.google.com) and verify the key has access to the Gemini Live API and the `gemini-2.5-flash-native-audio-preview-09-2025` model.
       </Step>
       <Step title="Restart the dev server">
-        After updating environment variables, restart the Vite dev server (`vite`) so the new values are picked up by `import.meta.env` / `process.env`.
+        After updating `.env.local`, restart the dev server so Vite picks up the new value:
+
+        ```bash
+        npm run dev
+        ```
       </Step>
     </Steps>
 
     <Warning>
-    Never commit your `API_KEY` to version control. Add `.env` to your `.gitignore` file.
+    Never commit your API key to version control. The `.env.local` file is already listed in `.gitignore` by default.
     </Warning>
   </Accordion>
 </AccordionGroup>

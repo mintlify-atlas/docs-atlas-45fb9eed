@@ -12,7 +12,7 @@ Mandarin Talk is a real-time AI conversation app that streams raw microphone aud
 | Frontend framework | React 19 + Vite + TypeScript |
 | 3D rendering | Three.js via `@react-three/fiber` and `@react-three/drei` |
 | AI model | Gemini Live API — `gemini-2.5-flash-native-audio-preview-09-2025` |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS (loaded via CDN in `index.html`) |
 | Icons | Lucide React |
 
 ## Audio pipeline
@@ -172,7 +172,7 @@ export enum ConnectionState {
 }
 
 export interface AudioVolumeState {
-  volume: number; // 0 to 1
+  volume: number; // 0 to 1 — used internally for avatar animation
 }
 ```
 
