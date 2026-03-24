@@ -1,0 +1,68 @@
+{
+  "projectType": "saas",
+  "projectName": "Mandarin Talk",
+  "projectDescription": "An AI-powered Mandarin conversation and pronunciation coaching app that uses the Gemini Live API for real-time dialogue, triple-layered subtitles (Hanzi, Pinyin, English), and instant pronunciation scoring.",
+  "theme": "almond",
+  "primaryColor": "#6acfdf",
+  "lightColor": "#e8f3f4",
+  "darkColor": "#0e0e0e",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/real-time-conversation",
+              "features/pronunciation-coaching",
+              "features/subtitles",
+              "features/lesson-library",
+              "features/speaking-rate",
+              "features/conversation-history"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/gemini-api-key",
+              "configuration/speaking-rate"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/architecture",
+              "reference/lessons",
+              "reference/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time Mandarin conversation powered by Gemini Live API",
+    "Animated 3D avatar with audio-reactive animation",
+    "Triple-layered subtitles: Hanzi, Pinyin, and English translation",
+    "Instant pronunciation scoring (0-100) with specific tonal feedback",
+    "Curated lesson library with structured roleplay scenarios",
+    "Adjustable speaking rates: Slow, Normal, and Fast",
+    "Full conversation history with Hanzi, Pinyin, and translation"
+  ],
+  "publicApiSurface": [
+    "LiveApiService.connect(scenarioInstruction?, speakingRate?)",
+    "LiveApiService.stop()",
+    "SubtitleData { hanzi, pinyin, english }",
+    "PronunciationFeedback { userText, pinyin, score, feedback }",
+    "ConversationTurn { id, role, text, pinyin?, translation?, timestamp }",
+    "Lesson { id, title, description, level, topic, scenario }",
+    "ConnectionState enum: DISCONNECTED | CONNECTING | CONNECTED | ERROR",
+    "Gemini tool: update_subtitles(hanzi, pinyin, english)",
+    "Gemini tool: provide_pronunciation_feedback(userText, pinyin, score, feedback)"
+  ]
+}
